@@ -1,0 +1,23 @@
+[project]
+name = "booking-ai-scheduler"
+version = "0.1.0"
+description = "Async REST API for beauty salon booking with AI assistant"
+authors = [{name = "Artur"}]
+readme = "README.md"
+requires-python = ">=3.13"
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM", "PL"]
+ignore = ["E501", "B008", "PLR0913"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
