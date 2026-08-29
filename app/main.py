@@ -1,4 +1,5 @@
 from fastapi import Depends, FastAPI
+from fastapi.security import HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1 import auth
@@ -10,7 +11,12 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="Async REST API for beauty salon booking with AI assistant",
+    swagger_ui_parameters={
+        "persistAuthorization": True,
+    }
 )
+
+security = HTTPBearer()
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 

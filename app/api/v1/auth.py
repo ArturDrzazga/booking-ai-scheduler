@@ -29,7 +29,6 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == user_data.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already registered")
-
     hashed = get_password_hash(user_data.password)
     new_user = User(
         email=user_data.email,
