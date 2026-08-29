@@ -21,7 +21,7 @@ class Booking(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     service_id = Column(Integer, ForeignKey("services.id"), nullable=False)
     staff_id = Column(Integer, ForeignKey("staff.id"), nullable=False)
 
