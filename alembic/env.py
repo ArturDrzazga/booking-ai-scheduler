@@ -6,6 +6,7 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 from app.core.database import Base
+from app.models import Booking, Service, Staff, User
 
 sys.path.append(str(Path(__file__).parent.parent))
 
