@@ -1,8 +1,9 @@
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.tasks import test_task
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -32,3 +33,9 @@ async def test_db(db: AsyncSession = Depends(get_db)):
         return {"status": "ok", "message": "Database connected"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+@app.get("/test-celery")
+async def test_celery():
+    task = test_task.delay()
+    return {"task_id": task.id, "status": "sent"}

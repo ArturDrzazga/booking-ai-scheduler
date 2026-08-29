@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0"
     DEBUG: bool = True
     DATABASE_URL: str = "postgresql+asyncpg://booking:booking@localhost:5432/booking"
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
+    REDIS_URL: str = "redis://localhost:6379/0"
 
     class Config:
         env_file = ".env"
