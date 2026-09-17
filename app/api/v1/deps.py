@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.models import User
+from app.models import Salon, User
 
 security = HTTPBearer()
 
@@ -32,3 +32,10 @@ async def get_current_user(
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
     return user
+
+async def get_current_salon(db: AsyncSession = Depends(get_db)) -> Salon:
+    result = await db.execute(select(Salon).where(Salon.is_active).limit(1))
+    salon = result.scalar_one_or_none()
+    if salon is None:
+        raise HTTPException(status_code=500, detail="No active salon found")
+    return salon
