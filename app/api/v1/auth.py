@@ -9,6 +9,7 @@ from app.models import User
 
 router = APIRouter()
 
+
 class UserRegister(BaseModel):
     email: str
     password: str
@@ -24,6 +25,7 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
+
 @router.post("/register", response_model=TokenResponse)
 async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == user_data.email))
@@ -31,9 +33,7 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
     hashed = get_password_hash(user_data.password)
     new_user = User(
-        email=user_data.email,
-        hashed_password=hashed,
-        full_name=user_data.full_name
+        email=user_data.email, hashed_password=hashed, full_name=user_data.full_name
     )
     db.add(new_user)
     await db.commit()
@@ -41,6 +41,7 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
 
     token = create_access_token({"sub": new_user.email})
     return {"access_token": token}
+
 
 @router.post("/login", response_model=TokenResponse)
 async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
