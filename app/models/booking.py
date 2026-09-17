@@ -43,4 +43,3 @@ class Booking(Base):
     user = relationship("User", backref="bookings")
     service = relationship("Service", backref="bookings")
     staff = relationship("Staff", backref="bookings")
-

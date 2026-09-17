@@ -1,6 +1,8 @@
 from fastapi import Depends, FastAPI
+from fastapi.security import HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1 import auth, users
 from app.core.config import settings
 from app.core.database import get_db
 from app.tasks import test_task
@@ -9,7 +11,15 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="Async REST API for beauty salon booking with AI assistant",
+    swagger_ui_parameters={
+        "persistAuthorization": True,
+    },
 )
+
+security = HTTPBearer()
+
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 
 
 @app.get("/")
