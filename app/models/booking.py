@@ -34,11 +34,11 @@ class Booking(Base):
     deposit_amount = Column(Float, nullable=False)
     deposit_paid = Column(Boolean, nullable=False)
 
-    payment_intent_id = Column(String(255), nullable=False)
+    payment_intent_id = Column(String(255), nullable=True)
     notes = Column(Text, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     user = relationship("User", backref="bookings")
     service = relationship("Service", backref="bookings")
