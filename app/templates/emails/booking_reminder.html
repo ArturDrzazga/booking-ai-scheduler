@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px; }
+        .header { text-align: center; padding-bottom: 20px; border-bottom: 2px solid #F59E0B; }
+        .header h1 { color: #F59E0B; margin: 0; }
+        .details { background: #fffbeb; padding: 15px; border-radius: 8px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔔 Przypomnienie o wizycie</h1>
+        </div>
+        <div class="content">
+            <p>Cześć {{ customer_name }},</p>
+            <p>Przypominamy o jutrzejszej wizycie:</p>
+
+            <div class="details">
+                <p><strong>Usługa:</strong> {{ service_name }}</p>
+                <p><strong>Pracownik:</strong> {{ staff_name }}</p>
+                <p><strong>Data:</strong> {{ start_time }}</p>
+            </div>
+
+            <p>Do zobaczenia!</p>
+        </div>
+        <div class="footer">
+            <p>{{ salon_name }}</p>
+        </div>
+    </div>
+</body>
+</html>
