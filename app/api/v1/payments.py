@@ -6,6 +6,7 @@ from app.api.v1.deps import get_current_salon, get_current_user
 from app.core.database import get_db
 from app.models import Booking, Salon
 from app.services.payment_service import get_payment_service
+from app.tasks.email_tasks import send_booking_confirmation
 
 router = APIRouter()
 
@@ -64,6 +65,8 @@ async def mock_confirm_payment(
         updated = await service.confirm_payment(booking, payment_id, db)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
+
+    send_booking_confirmation.delay(updated.id)
 
     return {
         "status": "success",
