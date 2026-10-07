@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     EMAIL_FROM: str = ""
 
+    GROQ_API_KEY: str = ""
+
     class Config:
         env_file = ".env"
         extra = "ignore"
