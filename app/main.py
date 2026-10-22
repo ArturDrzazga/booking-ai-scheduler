@@ -1,5 +1,7 @@
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
+from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPBearer
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1 import auth, bookings, chat, payments, services, staff, users
@@ -26,6 +28,7 @@ app.include_router(bookings.router, prefix="/api/v1/bookings", tags=["booking"])
 app.include_router(payments.router, prefix="/api/v1/payments", tags=["payments"])
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
 
+templates = Jinja2Templates(directory="app/templates")
 
 @app.get("/")
 async def root():
@@ -54,3 +57,7 @@ async def test_db(db: AsyncSession = Depends(get_db)):
 async def test_celery():
     task = test_task.delay()
     return {"task_id": task.id, "status": "sent"}
+
+@app.get("/chat", response_class=HTMLResponse, response_model=None)
+async def chat_page(request: Request):
+    return templates.TemplateResponse("chat/index.html", {"request": request})
