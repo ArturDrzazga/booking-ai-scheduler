@@ -48,7 +48,7 @@ async def chat(
         raise HTTPException(status_code=404, detail="Staff not found")
 
 
-    chat_service = AIBookingChat(db, salon.id)
+    chat_service = AIBookingChat(db, salon.id, current_user.id)
     date = datetime.fromisoformat(data.date)
 
     context = await chat_service.get_schedule_context(

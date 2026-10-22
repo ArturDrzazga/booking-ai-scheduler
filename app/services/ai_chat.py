@@ -6,14 +6,31 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.redis_client import redis_client
 from app.models import Booking, BookingStatus, Staff
 
 
 class AIBookingChat:
-    def __init__(self, db: AsyncSession, salon_id:int):
+    def __init__(self, db: AsyncSession, salon_id:int, user_id:int):
         self.db = db
         self.salon_id = salon_id
+        self.user_id = user_id
         self.conversation_history = []
+
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        self.redis_key = f"chat:{user_id}:{today}"
+
+    async def _load_history(self):
+        history = await redis_client.get(self.redis_key)
+        if history:
+            self.conversation_history = json.loads(history)
+
+    async def _save_history(self):
+        await redis_client.setex(
+            self.redis_key,
+            timedelta(hours=24),
+            json.dumps(self.conversation_history),
+        )
 
     async def get_schedule_context(
             self,
@@ -62,6 +79,9 @@ class AIBookingChat:
     async def chat(self, user_message: str, context: dict) -> dict:
         """Sends message to AI and return response"""
 
+        await self._load_history()
+        self.conversation_history.append({"role": "user", "content": user_message})
+
         system_prompt = f"""
 Jesteś asystentem rezerwacji w salonie beauty. Rozmawiasz z klientem.
 
@@ -95,7 +115,6 @@ Gdy klient potwierdzi, ustaw "ready_to_book": true i wypełnij "booking_details"
 }}
 """
 
-        self.conversation_history.append({"role": "user", "content": user_message})
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -130,6 +149,7 @@ Gdy klient potwierdzi, ustaw "ready_to_book": true i wypełnij "booking_details"
 
         ai_response = data["choices"][0]["message"]["content"]
         self.conversation_history.append({"role": "assistant", "content": ai_response})
+        await self._save_history()
 
 
         try:
