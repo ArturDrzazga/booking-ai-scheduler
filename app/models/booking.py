@@ -43,6 +43,3 @@ class Booking(Base):
     user = relationship("User", backref="bookings")
     service = relationship("Service", backref="bookings")
     staff = relationship("Staff", backref="bookings")
-
-    salon_id = Column(Integer, ForeignKey("salons.id"), nullable=False)
-    salon = relationship("Salon", backref="bookings")

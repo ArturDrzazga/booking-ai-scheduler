@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.deps import get_current_salon, get_current_user
+from app.api.v1.deps import get_current_user
 from app.core.database import get_db
-from app.models import Booking, Salon
+from app.models import Booking
 from app.services.payment_service import get_payment_service
 from app.tasks.email_tasks import send_booking_confirmation
 
@@ -14,7 +14,6 @@ router = APIRouter()
 @router.post("/bookings/{booking_id}/pay")
 async def create_payment(
     booking_id: int,
-    salon: Salon = Depends(get_current_salon),
     current_user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -22,7 +21,6 @@ async def create_payment(
     result = await db.execute(
         select(Booking).where(
             Booking.id == booking_id,
-            Booking.salon_id == salon.id,
             Booking.user_id == current_user.id,
         )
     )
@@ -44,15 +42,11 @@ async def create_payment(
 @router.post("/bookings/{booking_id}/mock-confirm")
 async def mock_confirm_payment(
     booking_id: int,
-    salon: Salon = Depends(get_current_salon),
     db: AsyncSession = Depends(get_db),
 ):
     """Simulates payment confirmation(mock)"""
     result = await db.execute(
-        select(Booking).where(
-            Booking.id == booking_id,
-            Booking.salon_id == salon.id,
-        )
+        select(Booking).where(Booking.id == booking_id)
     )
     booking = result.scalar_one_or_none()
     if not booking:

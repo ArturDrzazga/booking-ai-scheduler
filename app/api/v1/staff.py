@@ -3,9 +3,8 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.deps import get_current_salon
 from app.core.database import get_db
-from app.models import Salon, Staff
+from app.models import Staff
 
 router = APIRouter()
 
@@ -35,24 +34,18 @@ class StaffResponse(BaseModel):
 
 @router.get("/", response_model=list[StaffResponse])
 async def list_staff(
-        salon: Salon = Depends(get_current_salon),
         db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(
-        select(Staff).where(
-            Staff.salon_id == salon.id
-        )
-    )
+    result = await db.execute(select(Staff))
     return result.scalars().all()
+
 
 @router.post("/", response_model=StaffResponse)
 async def create_staff(
         data: StaffCreate,
-        salon: Salon = Depends(get_current_salon),
         db: AsyncSession = Depends(get_db)
 ):
     staff = Staff(
-        salon_id=salon.id,
         name=data.name,
         bio=data.bio,
         photo_url=data.photo_url,
@@ -62,35 +55,29 @@ async def create_staff(
     await db.refresh(staff)
     return staff
 
+
 @router.get("/{staff_id}", response_model=StaffResponse)
 async def get_staff(
         staff_id: int,
-        salon: Salon = Depends(get_current_salon),
         db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
-        select(Staff).where(
-            Staff.id == staff_id,
-            Staff.salon_id == salon.id
-        )
+        select(Staff).where(Staff.id == staff_id)
     )
     staff = result.scalar_one_or_none()
     if not staff:
         raise HTTPException(status_code=404, detail="Staff not found")
     return staff
 
+
 @router.put("/{staff_id}", response_model=StaffResponse)
 async def update_staff(
         staff_id: int,
         data: StaffUpdate,
-        salon: Salon = Depends(get_current_salon),
         db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
-        select(Staff).where(
-            Staff.id == staff_id,
-            Staff.salon_id == salon.id
-        )
+        select(Staff).where(Staff.id == staff_id)
     )
     staff = result.scalar_one_or_none()
     if not staff:
@@ -104,17 +91,14 @@ async def update_staff(
     await db.refresh(staff)
     return staff
 
+
 @router.delete("/{staff_id}")
 async def delete_staff(
         staff_id: int,
-        salon: Salon = Depends(get_current_salon),
         db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
-        select(Staff).where(
-            Staff.id == staff_id,
-            Staff.salon_id == salon.id
-        )
+        select(Staff).where(Staff.id == staff_id)
     )
     staff = result.scalar_one_or_none()
     if not staff:
