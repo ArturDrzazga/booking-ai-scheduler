@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.models import User
+from app.models import Settings, User
 
 security = HTTPBearer()
 
@@ -32,3 +32,18 @@ async def get_current_user(
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
     return user
+
+
+async def get_settings(db: AsyncSession = Depends(get_db)) -> Settings:
+    result = await db.execute(select(Settings).where(
+        Settings.id == 1
+    ))
+    settings = result.scalar_one_or_none()
+
+    if not settings:
+        settings = Settings(id=1)
+        db.add(settings)
+        await db.commit()
+        await db.refresh(settings)
+
+    return settings
