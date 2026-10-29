@@ -131,6 +131,7 @@ async def block_time(
         status=BookingStatus.CONFIRMED,
         total_price=0,
         deposit_amount=0,
+        deposit_paid=False,
         notes=data.reason or "Rezerwacja czasu",
         is_blocker=True
     )
