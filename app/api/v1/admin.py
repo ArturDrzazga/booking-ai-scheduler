@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -5,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.deps import get_current_admin, get_settings
 from app.core.database import get_db
 from app.core.encryption import encrypt_data
-from app.models import Settings, User
+from app.models import Booking, BookingStatus, Settings, User
 
 router = APIRouter()
 
@@ -69,6 +71,13 @@ class SettingsResponse(BaseModel):
         from_attributes = True
 
 
+class BlockTimeCreate(BaseModel):
+    staff_id: int
+    start_time: datetime
+    end_time: datetime
+    reason: str | None = None
+
+
 @router.get("/settings", response_model=SettingsResponse)
 async def get_admin_settings(
         settings: Settings = Depends(get_settings),
@@ -105,3 +114,27 @@ async def update_admin_settings(
     await db.commit()
     await db.refresh(settings)
     return settings
+
+
+@router.post("/block-time")
+async def block_time(
+        data: BlockTimeCreate,
+        db: AsyncSession = Depends(get_db),
+        admin: User = Depends(get_current_admin),
+):
+    block = Booking(
+        user_id=None,
+        staff_id=data.staff_id,
+        service_id=None,
+        start_time=data.start_time,
+        end_time=data.end_time,
+        status=BookingStatus.CONFIRMED,
+        total_price=0,
+        deposit_amount=0,
+        notes=data.reason or "Rezerwacja czasu",
+        is_blocker=True
+    )
+
+    db.add(block)
+    await db.commit()
+    return {"message": "Czas zarezerwowany"}
