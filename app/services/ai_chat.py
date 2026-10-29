@@ -11,9 +11,8 @@ from app.models import Booking, BookingStatus, Staff
 
 
 class AIBookingChat:
-    def __init__(self, db: AsyncSession, salon_id:int, user_id:int):
+    def __init__(self, db: AsyncSession, user_id: int):
         self.db = db
-        self.salon_id = salon_id
         self.user_id = user_id
         self.conversation_history = []
 
@@ -33,18 +32,16 @@ class AIBookingChat:
         )
 
     async def get_schedule_context(
-            self,
-            staff_id: int,
-            date: datetime,
-            duration_time: int,
+        self,
+        staff_id: int,
+        date: datetime,
+        duration_time: int,
     ) -> dict:
-        """Get context of schedule for AI"""
         day_start = date.replace(hour=0, minute=0, second=0, microsecond=0)
         day_end = day_start + timedelta(days=1)
 
         result = await self.db.execute(
             select(Booking).where(
-                Booking.salon_id == self.salon_id,
                 Booking.staff_id == staff_id,
                 Booking.start_time >= day_start,
                 Booking.start_time < day_end,
@@ -77,8 +74,6 @@ class AIBookingChat:
         }
 
     async def chat(self, user_message: str, context: dict) -> dict:
-        """Sends message to AI and return response"""
-
         await self._load_history()
         self.conversation_history.append({"role": "user", "content": user_message})
 
@@ -115,7 +110,6 @@ Gdy klient potwierdzi, ustaw "ready_to_book": true i wypełnij "booking_details"
 }}
 """
 
-
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "https://api.groq.com/openai/v1/chat/completions",
@@ -150,7 +144,6 @@ Gdy klient potwierdzi, ustaw "ready_to_book": true i wypełnij "booking_details"
         ai_response = data["choices"][0]["message"]["content"]
         self.conversation_history.append({"role": "assistant", "content": ai_response})
         await self._save_history()
-
 
         try:
             if "```json" in ai_response:

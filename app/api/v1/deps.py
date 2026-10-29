@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from sqlalchemy import select
@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.models import Salon, User
+from app.models import Settings, User
 
 security = HTTPBearer()
 
@@ -33,9 +33,28 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="User not found")
     return user
 
-async def get_current_salon(db: AsyncSession = Depends(get_db)) -> Salon:
-    result = await db.execute(select(Salon).where(Salon.is_active).limit(1))
-    salon = result.scalar_one_or_none()
-    if salon is None:
-        raise HTTPException(status_code=500, detail="No active salon found")
-    return salon
+
+async def get_current_admin(
+        current_user: User = Depends(get_current_user),
+) -> User:
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Brak uprawnień administratora"
+        )
+    return current_user
+
+
+async def get_settings(db: AsyncSession = Depends(get_db)) -> Settings:
+    result = await db.execute(select(Settings).where(
+        Settings.id == 1
+    ))
+    settings = result.scalar_one_or_none()
+
+    if not settings:
+        settings = Settings(id=1)
+        db.add(settings)
+        await db.commit()
+        await db.refresh(settings)
+
+    return settings

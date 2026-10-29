@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.core.config import settings
-from app.models import Booking, BookingStatus, Salon, Service, Staff, User
+from app.models import Booking, BookingStatus, Service, Staff, User
 from app.services.email_service import get_email_service
 
 
@@ -37,7 +37,6 @@ async def _send_confirmation(booking_id: int) -> None:
             user = await session.get(User, booking.user_id)
             service = await session.get(Service, booking.service_id)
             staff = await session.get(Staff, booking.staff_id)
-            salon = await session.get(Salon, booking.salon_id)
 
             email = get_email_service()
             await email.send_email(
@@ -53,7 +52,6 @@ async def _send_confirmation(booking_id: int) -> None:
                     "total_price": booking.total_price,
                     "deposit_amount": booking.deposit_amount,
                     "deposit_status": "opłacona" if booking.deposit_paid else "do zapłaty",
-                    "salon_name": salon.name,
                     "salon_address": "",
                 },
             )
@@ -81,7 +79,6 @@ async def _send_reminder(booking_id: int) -> None:
             user = await session.get(User, booking.user_id)
             service = await session.get(Service, booking.service_id)
             staff = await session.get(Staff, booking.staff_id)
-            salon = await session.get(Salon, booking.salon_id)
 
             email = get_email_service()
             await email.send_email(
@@ -93,7 +90,6 @@ async def _send_reminder(booking_id: int) -> None:
                     "service_name": service.name,
                     "staff_name": staff.name,
                     "start_time": booking.start_time.strftime("%d.%m.%Y %H:%M"),
-                    "salon_name": salon.name,
                 },
             )
     finally:
@@ -131,3 +127,19 @@ async def _process_tomorrow_reminders() -> None:
 
     finally:
         await engine.dispose()
+
+@shared_task
+def send_verification_email(to_email: str, code: str) -> None:
+    """Send verification email to user"""
+    asyncio.run(_send_verification_email(to_email, code))
+
+async def _send_verification_email(to_email: str, code: str) -> None:
+    email = get_email_service()
+    await email.send_email(
+        to=to_email,
+        subject="🔐 Kod weryfikacyjny",
+        template_name="verification_code.html",
+        context={
+            "code": code,
+        }
+    )

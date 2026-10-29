@@ -25,6 +25,8 @@ class Settings(BaseSettings):
 
     GROQ_API_KEY: str = ""
 
+    ENCRYPTION_KEY: str = ""
+
     class Config:
         env_file = ".env"
         extra = "ignore"
