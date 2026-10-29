@@ -4,7 +4,7 @@ from fastapi.security import HTTPBearer
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1 import auth, bookings, chat, payments, services, staff, users
+from app.api.v1 import admin, auth, bookings, chat, payments, services, staff, users
 from app.core.config import settings
 from app.core.database import get_db
 from app.tasks import test_task
@@ -27,6 +27,7 @@ app.include_router(staff.router, prefix="/api/v1/staff", tags=["staff"])
 app.include_router(bookings.router, prefix="/api/v1/bookings", tags=["booking"])
 app.include_router(payments.router, prefix="/api/v1/payments", tags=["payments"])
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
+app.include_router(admin.router, prefix="/api/v1/admin", tags=["admin"])
 
 templates = Jinja2Templates(directory="app/templates")
 

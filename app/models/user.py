@@ -15,7 +15,7 @@ class User(Base):
     phone_number = Column(String, nullable=True)
     is_verified = Column(Boolean, nullable=False, default=False)
     verification_code = Column(String(6), nullable=True)
-    verification_code_expires_at = Column(Integer, default=15)
+    verification_code_expires_at = Column(DateTime(timezone=True), default=15)
 
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)

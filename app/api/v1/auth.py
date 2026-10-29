@@ -1,5 +1,5 @@
 import random
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -52,7 +52,7 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
     new_user = User(
         email=user_data.email,
         hashed_password=hashed,
-        fullname=user_data.full_name,
+        full_name=user_data.full_name,
         phone_number=user_data.phone_number,
         is_verified=False,
         verification_code=code,
@@ -96,7 +96,7 @@ async def verify_account(
     if user.verification_code != data.code:
         raise HTTPException(status_code=400, detail="Invalid code")
 
-    if user.verification_code_expires_at < datetime.utcnow():
+    if user.verification_code_expires_at < datetime.now(UTC):
         raise HTTPException(status_code=400, detail="Code expired")
 
     user.is_verified = True
