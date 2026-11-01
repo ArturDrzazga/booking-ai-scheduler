@@ -17,6 +17,9 @@ class User(Base):
     verification_code = Column(String(6), nullable=True)
     verification_code_expires_at = Column(DateTime(timezone=True), default=15)
 
+    reset_password_token = Column(String(255), nullable=True, index=True)
+    reset_password_expires_at = Column(DateTime, nullable=True)
+
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

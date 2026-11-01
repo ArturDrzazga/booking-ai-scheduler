@@ -143,3 +143,16 @@ async def _send_verification_email(to_email: str, code: str) -> None:
             "code": code,
         }
     )
+
+@shared_task
+def send_password_reset_email(to_email: str, reset_link: str) -> None:
+    asyncio.run(_send_password_reset_email(to_email, reset_link))
+
+async def _send_password_reset_email(to_email: str, reset_link: str) -> None:
+    email = get_email_service()
+    await email.send_email(
+        to=to_email,
+        subject="🔑 Resetowanie hasła",
+        template_name="password_reset.html",
+        context={"reset_link": reset_link},
+    )
