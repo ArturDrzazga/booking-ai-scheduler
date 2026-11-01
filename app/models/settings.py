@@ -43,6 +43,7 @@ class Settings(Base):
     twilio_auth_token = Column(String(100), nullable=True)
     twilio_phone_number = Column(String(20), nullable=True)
 
+    ai_enabled = Column(Boolean, default=False)
     ai_api_key = Column(String(255), nullable=True)
 
     terms_of_service = Column(Text, nullable=True)

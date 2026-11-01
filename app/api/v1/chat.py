@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.deps import get_current_user
 from app.core.database import get_db
-from app.models import Booking, BookingStatus, Service, Staff, User
+from app.models import Booking, BookingStatus, Service, Settings, Staff, User
 from app.services.ai_chat import AIBookingChat
 
 router = APIRouter()
@@ -27,6 +27,9 @@ async def chat(
         db: AsyncSession = Depends(get_db),
 ):
     """Chat with Ai endpoint"""
+
+    if not Settings.ai_enabled:
+        raise HTTPException(status_code=403, detail="Asystent AI jest chwilowo wyłączony.")
     result = await db.execute(
         select(Service).where(Service.id == data.service_id)
     )

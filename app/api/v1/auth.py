@@ -2,7 +2,7 @@ import random
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,10 +15,10 @@ router = APIRouter()
 
 
 class UserRegister(BaseModel):
-    email: str
+    email: EmailStr
     password: str
     full_name: str | None = None
-    phone_number: str
+    phone_number: str = Field(..., pattern=r"^\+?[0-9]{9-15}$")
 
 
 class UserLogin(BaseModel):
