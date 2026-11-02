@@ -1,13 +1,14 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.deps import get_current_admin, get_settings
 from app.core.database import get_db
 from app.core.encryption import encrypt_data
-from app.models import Booking, BookingStatus, Settings, User
+from app.models import Booking, BookingStatus, Service, Settings, Staff, User
 
 router = APIRouter()
 
@@ -78,6 +79,18 @@ class BlockTimeCreate(BaseModel):
     reason: str | None = None
 
 
+class AdminBookingCreate(BaseModel):
+    client_id: int | None = None
+    client_name: str | None = None
+    client_phone: str | None = None
+    client_email: str | None = None
+
+    service_id: int
+    staff_id: int
+    start_time: datetime
+    notes: str | None = None
+
+
 @router.get("/settings", response_model=SettingsResponse)
 async def get_admin_settings(
         settings: Settings = Depends(get_settings),
@@ -139,3 +152,105 @@ async def block_time(
     db.add(block)
     await db.commit()
     return {"message": "Czas zarezerwowany"}
+
+@router.get("/clients/search")
+async def search_client(
+        query: str,
+        db: AsyncSession = Depends(get_db),
+        admin: User = Depends(get_current_admin),
+):
+    """Search clients by name, surname or phone number"""
+    result = await db.execute(
+        select(User).where(
+            or_(
+                User.full_name.ilike(f"%{query}%"),
+                User.phone_number.ilike(f"%{query}%"),
+                User.email.ilike(f"%{query}%"),
+            )
+        ).limit(10)
+    )
+    clients = result.scalars().all()
+    return [
+        {
+            "id": c.id,
+            "full_name": c.full_name,
+            "phone_number": c.phone_number,
+            "email": c.email,
+            "is_guest": c.is_guest,
+        }
+        for c in clients
+    ]
+
+
+@router.post("/bookings")
+async def create_admin_booking(
+        data: AdminBookingCreate,
+        db: AsyncSession = Depends(get_db),
+        admin: User = Depends(get_current_admin),
+):
+    """Creates booking for phone clients or existing."""
+
+    client = None
+    if data.client_id:
+        client = await db.get(User, data.client_id)
+        if not client:
+            raise HTTPException(status_code=404, detail="Client not found")
+    elif data.client_phone:
+        result = await db.execute(
+            select(User).where(User.phone_number == data.client_phone)
+        )
+        client = result.scalar_one_or_none()
+
+        if not client:
+            client = User(
+                email=data.client_email or f"guest_{data.client_phone}@temp.local",
+                hashed_password="",
+                full_name=data.client_name,
+                phone_number=data.client_phone,
+                is_guest=True,
+                is_verified=False,
+            )
+            db.add(client)
+            await db.flush()
+    else:
+        raise HTTPException(status_code=400, detail="Provide client_id or client_phone")
+
+    service = await db.get(Service, data.service_id)
+    staff = await db.get(Staff, data.staff_id)
+    if not service or not staff:
+        raise HTTPException(status_code=404, detail="Service or Staff not found")
+
+    end_time = data.start_time + timedelta(minutes=service.duration_time)
+    result = await db.execute(
+        select(Booking).where(
+            Booking.staff_id == staff.id,
+            Booking.status.in_([BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.DEPOSIT_PAID]),
+            Booking.start_time < end_time,
+            Booking.end_time > data.start_time,
+        )
+    )
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Time slot already booked")
+
+    booking = Booking(
+        user_id=client.id,
+        service_id=service.id,
+        staff_id=staff.id,
+        start_time=data.start_time,
+        end_time=end_time,
+        status=BookingStatus.CONFIRMED,
+        total_price=service.price,
+        deposit_amount=0,
+        deposit_paid=False,
+        notes=data.notes,
+    )
+    db.add(booking)
+    await db.commit()
+    await db.refresh(booking)
+
+    return {
+        "id": booking.id,
+        "client_name": client.full_name,
+        "service": service.name,
+        "start_time": booking.start_time,
+    }

@@ -19,7 +19,7 @@ class UserRegister(BaseModel):
     email: EmailStr
     password: str
     full_name: str | None = None
-    phone_number: str = Field(..., pattern=r"^\+?[0-9]{9-15}$")
+    phone_number: str = Field(..., pattern=r"^\+?[0-9]{9,15}$")
 
 
 class UserLogin(BaseModel):
