@@ -13,7 +13,6 @@ class Settings(Base):
     phone = Column(String(255), nullable=True)
     email = Column(String(255), nullable=True)
     instagram_url = Column(String(255), nullable=True)
-    logo_url = Column(String(255), nullable=True)
 
     work_hours = Column(JSON, default={
         "monday": {"start": "09:00", "end": "17:00"},
@@ -43,10 +42,14 @@ class Settings(Base):
     twilio_auth_token = Column(String(100), nullable=True)
     twilio_phone_number = Column(String(20), nullable=True)
 
+    ai_enabled = Column(Boolean, default=False)
     ai_api_key = Column(String(255), nullable=True)
 
     terms_of_service = Column(Text, nullable=True)
     privacy_policy = Column(Text, nullable=True)
     cancellation_policy = Column(Text, nullable=True)
+
+    logo_url = Column(String(255), nullable=True)
+    gallery_images = Column(JSON, default=list)
 
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

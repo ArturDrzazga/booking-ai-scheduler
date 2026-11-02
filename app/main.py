@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPBearer
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.staticfiles import StaticFiles
 
 from app.api.v1 import admin, auth, bookings, chat, payments, services, staff, users
 from app.core.config import settings
@@ -29,6 +30,7 @@ app.include_router(payments.router, prefix="/api/v1/payments", tags=["payments"]
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["admin"])
 
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
 @app.get("/")
