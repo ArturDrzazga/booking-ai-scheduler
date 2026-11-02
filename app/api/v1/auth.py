@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr, Field
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -48,15 +48,40 @@ class ResetPasswordRequest(BaseModel):
 
 @router.post("/register")
 async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(User).where(
+            or_(
+                User.email == user_data.email,
+                User.phone_number == user_data.phone_number
+            )
+        )
+    )
+    existing_user = result.scalar_one_or_none()
 
-    result = await db.execute(select(User).where(User.email == user_data.email))
-    if result.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Email already registered")
+    if existing_user:
+        if existing_user.is_verified:
+            raise HTTPException(status_code=400, detail="Konto z tym emailem lub telefonem już istnieje.")
 
+        if existing_user.is_guest:
+            existing_user.email = user_data.email
+            existing_user.hashed_password = get_password_hash(user_data.password)
+            existing_user.full_name = user_data.full_name or existing_user.full_name
+            existing_user.is_guest = False
+
+            code = str(random.randint(100000, 999999))
+            existing_user.verification_code = code
+            existing_user.verification_code_expires_at = datetime.utcnow() + timedelta(minutes=15)
+
+            await db.commit()
+            send_verification_email.delay(existing_user.email, code)
+
+            return {
+                "message": "Konto połączone z historią. Sprawdź e-mail i potwierdź rejestrację kodem.",
+                "email": existing_user.email
+            }
 
     code = str(random.randint(100000, 999999))
     expires = datetime.utcnow() + timedelta(minutes=15)
-
 
     hashed = get_password_hash(user_data.password)
     new_user = User(
@@ -67,6 +92,7 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
         is_verified=False,
         verification_code=code,
         verification_code_expires_at=expires,
+        is_guest=False
     )
     db.add(new_user)
     await db.commit()
