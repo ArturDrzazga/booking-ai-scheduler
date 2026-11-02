@@ -13,7 +13,6 @@ class Settings(Base):
     phone = Column(String(255), nullable=True)
     email = Column(String(255), nullable=True)
     instagram_url = Column(String(255), nullable=True)
-    logo_url = Column(String(255), nullable=True)
 
     work_hours = Column(JSON, default={
         "monday": {"start": "09:00", "end": "17:00"},
@@ -49,5 +48,8 @@ class Settings(Base):
     terms_of_service = Column(Text, nullable=True)
     privacy_policy = Column(Text, nullable=True)
     cancellation_policy = Column(Text, nullable=True)
+
+    logo_url = Column(String(255), nullable=True)
+    gallery_images = Column(JSON, default=list)
 
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

@@ -1,6 +1,8 @@
+import os
+import uuid
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -254,3 +256,29 @@ async def create_admin_booking(
         "service": service.name,
         "start_time": booking.start_time,
     }
+
+
+UPLOAD_DIR = "app/static/uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@router.post("/upload")
+async def upload_file(
+        file: UploadFile = File(...),
+        admin: User = Depends(get_current_admin),
+):
+    """Upload image(logo, gallery)"""
+    if file.content_type not in ["image/png", "image/web", "image/jpeg"]:
+        raise HTTPException(status_code=400, detail="Dozwolone są tylko pliki JPG, PNG i WEBP.")
+
+    contents = await file.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Plik jest za duży (max 5 MB).")
+
+    ext = file.filename.split(".")[-1]
+    filename = f"{uuid.uuid4()}.{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+
+    with open(filepath, "wb") as f:
+        f.write(contents)
+
+    return {"url": f"/static/uploads/{filename}"}
