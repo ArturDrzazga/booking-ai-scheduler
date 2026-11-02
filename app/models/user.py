@@ -13,6 +13,7 @@ class User(Base):
     full_name = Column(String, nullable=False)
 
     phone_number = Column(String, nullable=True)
+    is_guest = Column(Boolean, default=False)
     is_verified = Column(Boolean, nullable=False, default=False)
     verification_code = Column(String(6), nullable=True)
     verification_code_expires_at = Column(DateTime(timezone=True), default=15)
