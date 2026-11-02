@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.core.config import settings
-from app.models import Booking, BookingStatus, Service, Staff, User
+from app.models import Booking, BookingStatus, Service, Settings, Staff, User
 from app.services.email_service import get_email_service
 
 
@@ -32,6 +32,13 @@ async def _send_confirmation(booking_id: int) -> None:
             )
             booking = result.scalar_one_or_none()
             if not booking:
+                return
+
+            settings_result = await session.execute(
+                select(Settings).where(Settings.id == 1)
+            )
+            settings = settings_result.scalar_one_or_none()
+            if settings and not settings.email_notifications:
                 return
 
             user = await session.get(User, booking.user_id)
@@ -74,6 +81,13 @@ async def _send_reminder(booking_id: int) -> None:
             )
             booking = result.scalar_one_or_none()
             if not booking:
+                return
+
+            settings_result = await session.execute(
+                select(Settings).where(Settings.id == 1)
+            )
+            settings = settings_result.scalar_one_or_none()
+            if settings and not settings.email_notifications:
                 return
 
             user = await session.get(User, booking.user_id)
