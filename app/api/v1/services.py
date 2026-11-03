@@ -3,7 +3,9 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.deps import get_current_admin
 from app.core.database import get_db
+from app.models import User
 from app.models.service import Service
 
 router = APIRouter()
@@ -46,7 +48,8 @@ async def list_services(
 @router.post("/", response_model=ServiceResponse)
 async def create_service(
         data: ServiceCreate,
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        admin: User = Depends(get_current_admin)
 ):
     service = Service(
         name=data.name,
@@ -78,7 +81,8 @@ async def get_service(
 async def update_service(
         service_id: int,
         data: ServiceUpdate,
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        admin: User = Depends(get_current_admin)
 ):
     result = await db.execute(
         select(Service).where(Service.id == service_id)
@@ -99,7 +103,8 @@ async def update_service(
 @router.delete("/{service_id}")
 async def delete_service(
         service_id: int,
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        admin: User = Depends(get_current_admin)
 ):
     result = await db.execute(
         select(Service).where(Service.id == service_id)
