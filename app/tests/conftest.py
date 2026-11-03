@@ -1,7 +1,7 @@
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.pool import NullPool
 
 from app.core.database import Base, get_db
 from app.core.security import create_access_token, get_password_hash
@@ -11,36 +11,38 @@ from app.models.settings import Settings
 from app.models.staff import Staff
 from app.models.user import User
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+TEST_DATABASE_URL = "postgresql+asyncpg://booking:booking@localhost:5432/booking_test"
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="function")
 async def engine():
-    """Creates an in-memory SQLite database engine for testing."""
-    engine = create_async_engine(
-        TEST_DATABASE_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool
-    )
+    """Creates the PostgreSQL test database engine and resets tables before each test."""
+    engine = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool)
+
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+
     yield engine
     await engine.dispose()
 
 
 @pytest_asyncio.fixture
 async def db_session(engine):
-    """Provides a database session for tests."""
+    """Provides a clean database session for each test."""
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session() as session:
         yield session
+        await session.rollback()
 
 
 @pytest_asyncio.fixture
 async def client(db_session):
     """Provides an HTTP client connected to the test application."""
+
     async def override_get_db():
         yield db_session
+
     app.dependency_overrides[get_db] = override_get_db
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
@@ -85,6 +87,7 @@ async def normal_user(db_session):
         email="klient@test.pl",
         hashed_password=get_password_hash("haslo123"),
         phone_number="111222333",
+        full_name="Klient Testowy",
         is_verified=True,
         is_guest=False,
         is_admin=False
@@ -102,6 +105,7 @@ async def admin_user(db_session):
         email="admin@test.pl",
         hashed_password=get_password_hash("admin123"),
         phone_number="999888777",
+        full_name="Admin Testowy",
         is_verified=True,
         is_guest=False,
         is_admin=True

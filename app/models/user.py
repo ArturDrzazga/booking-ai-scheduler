@@ -16,10 +16,10 @@ class User(Base):
     is_guest = Column(Boolean, default=False)
     is_verified = Column(Boolean, nullable=False, default=False)
     verification_code = Column(String(6), nullable=True)
-    verification_code_expires_at = Column(DateTime(timezone=True), default=15)
+    verification_code_expires_at = Column(DateTime(timezone=True), nullable=True)
 
     reset_password_token = Column(String(255), nullable=True, index=True)
-    reset_password_expires_at = Column(DateTime, nullable=True)
+    reset_password_expires_at = Column(DateTime(timezone=True), nullable=True)
 
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
