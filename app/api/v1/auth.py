@@ -111,7 +111,7 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == login_data.email))
     user = result.scalar_one_or_none()
     if not user or not verify_password(login_data.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
 
     if not user.is_verified:
         raise HTTPException(status_code=403, detail="Konto niezweryfikowane. Sprawdź email.")
@@ -143,7 +143,7 @@ async def verify_account(
     return {"message": "Konto zweryfikowane. Możesz się zalogować."}
 
 
-@router.post("/forgot_pasword")
+@router.post("/forgot-password")
 async def forgot_password(
         data: ForgotPasswordRequest,
         db: AsyncSession = Depends(get_db),
@@ -164,7 +164,7 @@ async def forgot_password(
         "message": "Jeśli email istnieje w bazie, wysłaliśmy link do resetu hasła."
     }
 
-@router.post("/reset_password")
+@router.post("/reset-password")
 async def reset_password(
         data: ResetPasswordRequest,
         db: AsyncSession = Depends(get_db),
