@@ -3,8 +3,9 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.deps import get_current_admin
 from app.core.database import get_db
-from app.models import Staff
+from app.models import Staff, User
 
 router = APIRouter()
 
@@ -43,7 +44,8 @@ async def list_staff(
 @router.post("/", response_model=StaffResponse)
 async def create_staff(
         data: StaffCreate,
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        admin: User = Depends(get_current_admin)
 ):
     staff = Staff(
         name=data.name,
@@ -74,7 +76,8 @@ async def get_staff(
 async def update_staff(
         staff_id: int,
         data: StaffUpdate,
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        admin: User = Depends(get_current_admin)
 ):
     result = await db.execute(
         select(Staff).where(Staff.id == staff_id)
@@ -95,7 +98,8 @@ async def update_staff(
 @router.delete("/{staff_id}")
 async def delete_staff(
         staff_id: int,
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        admin: User = Depends(get_current_admin)
 ):
     result = await db.execute(
         select(Staff).where(Staff.id == staff_id)
